@@ -4,7 +4,7 @@ for i = 0, MAX_PLAYERS - 1 do
         squishScale = 1,
         setGroundScale = false,
         velYBurst = 0,
-        velYFastfall = 20,
+        velYFastfall = 30,
         thokCount = 1,
         fillStep = false,
         gfxSpin = 0
@@ -33,8 +33,9 @@ local function act_kate_thok(m)
     local e = gKateStates[m.playerIndex]
     set_mario_animation(m, MARIO_ANIM_DIVE)
     if m.actionState == 0 then
-        m.vel.y = 10
-        m.forwardVel = m.forwardVel + 30
+        m.faceAngle.y = m.intendedYaw
+        m.forwardVel = m.forwardVel + math.max(math.abs(e.velYFastfall)*0.55, 30)
+        m.vel.y = 30
         m.vel.x = sins(m.faceAngle.y)*m.forwardVel
         m.vel.z = coss(m.faceAngle.y)*m.forwardVel
         m.actionState = m.actionState + 1
@@ -69,18 +70,18 @@ local function kate_update(m)
     end
 
     if m.action & ACT_FLAG_AIR ~= 0 then
-        if m.controller.buttonDown & Z_TRIG ~= 0 then
+        if m.controller.buttonDown & Z_TRIG ~= 0 and m.vel.y < 30 then
             e.velYFastfall = math.min(m.vel.y, e.velYFastfall) - 6
             m.vel.y = e.velYFastfall
         end
 
-        e.squishScale = math.clamp(math.lerp(e.squishScale, 1 + (math.abs(m.vel.y) - 10)*0.01, 0.3), 0.2, 1.8)
+        e.squishScale = math.clamp(math.lerp(e.squishScale, 1 + (math.abs(m.vel.y) - 10)*0.005, 0.3), 0.2, 1.8)
         if m.vel.y > 0 then
             m.marioObj.header.gfx.pos.y = m.pos.y - 160*(e.squishScale - 1)
         end
         e.setGroundScale = false
     else
-        e.velYFastfall = 20
+        e.velYFastfall = 30
         e.thokCount = 1
         if not e.setGroundScale then
             e.squishScale = 2 - e.squishScale
@@ -119,7 +120,7 @@ end
 local function kate_before_action(m, nextAct)
     local e = gKateStates[m.playerIndex]
     if nextAct & ACT_FLAG_AIR ~= 0 then
-        e.velYBurst = math.abs(e.squishScale - 1) + 1
+        e.velYBurst = math.abs(e.squishScale - 1)*1.5 + 1
     end
     if nextAct == ACT_JUMP then
         return set_mario_action(m, ACT_DOUBLE_JUMP, 0)
